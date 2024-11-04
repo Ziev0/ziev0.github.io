@@ -1,6 +1,6 @@
 // Load the model and start the video stream when the page loads
 async function main() {
-  const model = await cocoSsd.load();
+  const model = await mobilenetssd.load(); // Load MobileNet SSD model
   const webcamElement = document.getElementById("webcam");
   const canvasElement = document.getElementById("canvas");
   const canvasCtx = canvasElement.getContext("2d");
