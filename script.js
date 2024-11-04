@@ -32,8 +32,13 @@ async function startWebcam(webcamElement) {
     }
   };
 
-  currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-  webcamElement.srcObject = currentStream;
+  try {
+    currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+    webcamElement.srcObject = currentStream;
+  } catch (error) {
+    console.error("Error accessing media devices.", error);
+    alert("Could not access camera: " + error.message);
+  }
 }
 
 // Perform object detection and draw bounding boxes
@@ -69,4 +74,3 @@ async function detectFrame(model, video, canvas, ctx) {
 
 // Start the main function
 main();
-
