@@ -1,3 +1,6 @@
+let currentStream; // Store the current media stream
+let useFrontCamera = true; // Track whether to use the front or back camera
+
 // Load the model and start the video stream when the page loads
 async function main() {
   const model = await cocoSsd.load();
@@ -6,17 +9,31 @@ async function main() {
   const canvasCtx = canvasElement.getContext("2d");
 
   // Initialize the webcam
-  if (navigator.mediaDevices.getUserMedia) {
-    navigator.mediaDevices
-      .getUserMedia({ video: true })
-      .then((stream) => {
-        webcamElement.srcObject = stream;
-        webcamElement.addEventListener("loadeddata", () => detectFrame(model, webcamElement, canvasElement, canvasCtx));
-      })
-      .catch((err) => console.error("Error accessing webcam:", err));
-  } else {
-    alert("Webcam not supported on this browser.");
+  await startWebcam(webcamElement);
+
+  // Event listener for the switch camera button
+  document.getElementById("switch-camera").addEventListener("click", async () => {
+    useFrontCamera = !useFrontCamera; // Toggle camera
+    await startWebcam(webcamElement); // Restart webcam with the new camera
+  });
+
+  webcamElement.addEventListener("loadeddata", () => detectFrame(model, webcamElement, canvasElement, canvasCtx));
+}
+
+// Start the webcam with the specified camera
+async function startWebcam(webcamElement) {
+  if (currentStream) {
+    currentStream.getTracks().forEach(track => track.stop()); // Stop the current stream if it exists
   }
+
+  const constraints = {
+    video: {
+      facingMode: useFrontCamera ? "user" : "environment" // Use front or back camera
+    }
+  };
+
+  currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+  webcamElement.srcObject = currentStream;
 }
 
 // Perform object detection and draw bounding boxes
@@ -52,3 +69,4 @@ async function detectFrame(model, video, canvas, ctx) {
 
 // Start the main function
 main();
+
