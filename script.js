@@ -1,6 +1,3 @@
-let currentStream; // Store the current media stream
-let useFrontCamera = true; // Track whether to use the front or back camera
-
 // Load the model and start the video stream when the page loads
 async function main() {
   const model = await cocoSsd.load();
@@ -8,36 +5,23 @@ async function main() {
   const canvasElement = document.getElementById("canvas");
   const canvasCtx = canvasElement.getContext("2d");
 
-  // Initialize the webcam
-  await startWebcam(webcamElement);
-
-  // Event listener for the switch camera button
-  document.getElementById("switch-camera").addEventListener("click", async () => {
-    useFrontCamera = !useFrontCamera; // Toggle camera
-    await startWebcam(webcamElement); // Restart webcam with the new camera
-  });
-
-  webcamElement.addEventListener("loadeddata", () => detectFrame(model, webcamElement, canvasElement, canvasCtx));
-}
-
-// Start the webcam with the specified camera
-async function startWebcam(webcamElement) {
-  if (currentStream) {
-    currentStream.getTracks().forEach(track => track.stop()); // Stop the current stream if it exists
-  }
-
+  // Initialize the webcam with constraints for the back camera
   const constraints = {
     video: {
-      facingMode: useFrontCamera ? "user" : "environment" // Use front or back camera
-    }
+      facingMode: { exact: "environment" }, // Use the back camera
+    },
   };
 
-  try {
-    currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-    webcamElement.srcObject = currentStream;
-  } catch (error) {
-    console.error("Error accessing media devices.", error);
-    alert("Could not access camera: " + error.message);
+  if (navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices
+      .getUserMedia(constraints)
+      .then((stream) => {
+        webcamElement.srcObject = stream;
+        webcamElement.addEventListener("loadeddata", () => detectFrame(model, webcamElement, canvasElement, canvasCtx));
+      })
+      .catch((err) => console.error("Error accessing webcam:", err));
+  } else {
+    alert("Webcam not supported on this browser.");
   }
 }
 
