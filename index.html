@@ -1,49 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MobileNet SSD Object Detection</title>
-  <style>
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-family: Arial, sans-serif;
-    }
-    video {
-      width: 100%;
-      max-width: 640px;
-      height: auto;
-      border: 1px solid black;
-    }
-    canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      max-width: 640px;
-      height: auto;
-      border: 1px solid black;
-    }
-    button {
-      margin-top: 10px;
-    }
-  </style>
-  <!--
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
-  -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet-ssd"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Object Detection with YOLO</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        video {
+            width: 100%;
+            max-width: 640px;
+            margin-top: 20px;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
 </head>
 <body>
+    <h1>Real-Time YOLO Object Detection</h1>
+    <video id="video" autoplay></video>
+    <canvas id="canvas"></canvas>
 
-  <h1>Mobile Camera Object Detection</h1>
-  <video id="webcam" autoplay></video>
-  <canvas id="canvas"></canvas>
-  <button id="switch-camera">Switch Camera</button>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+    
+    <script>
+        // Initialize video and canvas
+        const videoElement = document.getElementById('video');
+        const canvasElement = document.getElementById('canvas');
+        const canvasContext = canvasElement.getContext('2d');
 
-  <script src="script.js"></script>
+        // Set up camera
+        async function setupCamera() {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            videoElement.srcObject = stream;
+            videoElement.play();
+        }
+
+        // Load the YOLO model (or COCO-SSD, if YOLO isn't available in TensorFlow.js)
+        async function loadModel() {
+            const model = await cocoSsd.load();  // You can also use a YOLO model if available
+            detectObjects(model);
+        }
+
+        // Detect objects in real-time
+        async function detectObjects(model) {
+            videoElement.width = videoElement.videoWidth;
+            videoElement.height = videoElement.videoHeight;
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+
+            while (true) {
+                const predictions = await model.detect(videoElement);
+                canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+                // Draw bounding boxes for detected objects
+                predictions.forEach(prediction => {
+                    canvasContext.beginPath();
+                    canvasContext.rect(prediction.bbox[0], prediction.bbox[1], prediction.bbox[2], prediction.bbox[3]);
+                    canvasContext.lineWidth = 2;
+                    canvasContext.strokeStyle = "red";
+                    canvasContext.fillStyle = "red";
+                    canvasContext.stroke();
+                    canvasContext.fillText(prediction.class, prediction.bbox[0], prediction.bbox[1] - 5);
+                });
+
+                // Request the next frame
+                await tf.nextFrame();
+            }
+        }
+
+        // Initialize everything
+        setupCamera().then(() => {
+            loadModel();
+        });
+    </script>
 </body>
 </html>
