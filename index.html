@@ -30,37 +30,52 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
     
     <script>
-        // Initialize video and canvas
         const videoElement = document.getElementById('video');
         const canvasElement = document.getElementById('canvas');
         const canvasContext = canvasElement.getContext('2d');
 
-        // Set up camera
+        // Set up camera (use back camera)
         async function setupCamera() {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            videoElement.srcObject = stream;
-            videoElement.play();
+            const constraints = {
+                video: {
+                    facingMode: { exact: "environment" },  // Request the back camera
+                    width: { ideal: 1280 }, // Set a larger resolution for better object detection
+                    height: { ideal: 720 }
+                }
+            };
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoElement.srcObject = stream;
+                videoElement.play();
+            } catch (err) {
+                console.error("Error accessing the camera:", err);
+            }
         }
 
-        // Load the YOLO model (or COCO-SSD, if YOLO isn't available in TensorFlow.js)
+        // Load COCO-SSD model (YOLO can be used if you have it converted to TensorFlow.js)
         async function loadModel() {
-            const model = await cocoSsd.load();  // You can also use a YOLO model if available
-            detectObjects(model);
+            try {
+                const model = await cocoSsd.load();
+                detectObjects(model);
+            } catch (err) {
+                console.error("Error loading model:", err);
+            }
         }
 
-        // Detect objects in real-time
+        // Detect objects
         async function detectObjects(model) {
             videoElement.width = videoElement.videoWidth;
             videoElement.height = videoElement.videoHeight;
             canvasElement.width = videoElement.videoWidth;
             canvasElement.height = videoElement.videoHeight;
 
-            while (true) {
+            // Start continuous object detection
+            async function detect() {
                 const predictions = await model.detect(videoElement);
                 canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-                // Draw bounding boxes for detected objects
                 predictions.forEach(prediction => {
+                    // Draw bounding boxes
                     canvasContext.beginPath();
                     canvasContext.rect(prediction.bbox[0], prediction.bbox[1], prediction.bbox[2], prediction.bbox[3]);
                     canvasContext.lineWidth = 2;
@@ -70,12 +85,14 @@
                     canvasContext.fillText(prediction.class, prediction.bbox[0], prediction.bbox[1] - 5);
                 });
 
-                // Request the next frame
-                await tf.nextFrame();
+                // Continue to the next frame
+                requestAnimationFrame(detect);
             }
+
+            detect();  // Start detection
         }
 
-        // Initialize everything
+        // Initialize
         setupCamera().then(() => {
             loadModel();
         });
