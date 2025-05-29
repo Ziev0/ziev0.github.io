@@ -1,16 +1,16 @@
 {
-  "name": "bolt-expo-starter",
+  "name": "ghazi",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "private": true,
   "homepage": "https://ziev0.github.io",
-"scripts": {
-  "dev": "EXPO_NO_TELEMETRY=1 expo start",
-  "build": "expo export --platform web",
-  "lint": "expo lint",
-  "predeploy": "npm run build",
-  "deploy": "gh-pages -d dist"
-},
+  "scripts": {
+    "dev": "EXPO_NO_TELEMETRY=1 expo start",
+    "build": "expo export --platform web",
+    "lint": "expo lint",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.3",
     "@expo/vector-icons": "^14.1.0",
